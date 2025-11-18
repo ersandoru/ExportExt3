@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "dgSpecHash": "6dT5mMZCKWU=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\ersan.doru\\github\\ExportExt3\\ExportExt3.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\ersan.doru\\.nuget\\packages\\discutils.core\\0.16.13\\discutils.core.0.16.13.nupkg.sha512",
+    "C:\\Users\\ersan.doru\\.nuget\\packages\\discutils.ext\\0.16.13\\discutils.ext.0.16.13.nupkg.sha512",
+    "C:\\Users\\ersan.doru\\.nuget\\packages\\discutils.streams\\0.16.13\\discutils.streams.0.16.13.nupkg.sha512",
+    "C:\\Users\\ersan.doru\\.nuget\\packages\\system.management\\8.0.0\\system.management.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

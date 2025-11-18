@@ -1,0 +1,135 @@
+<Application x:Class="ExportExt3.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:ExportExt3"
+             StartupUri="MainWindow.xaml">
+    <Application.Resources>
+        <ResourceDictionary>
+            <local:InverseBooleanConverter x:Key="InverseBooleanConverter" />
+
+            <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF4F6FB" />
+            <SolidColorBrush x:Key="CardBackgroundBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF0063B1" />
+            <SolidColorBrush x:Key="AccentBrushDark" Color="#FF00487C" />
+            <SolidColorBrush x:Key="MutedForegroundBrush" Color="#FF5F6C87" />
+            <SolidColorBrush x:Key="InputBorderBrush" Color="#FFD0D5DD" />
+
+            <Style TargetType="{x:Type TextBlock}">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="Foreground" Value="#FF111926" />
+            </Style>
+
+            <Style TargetType="{x:Type Button}">
+                <Setter Property="FontFamily" Value="Segoe UI Semibold" />
+                <Setter Property="Foreground" Value="#FF111926" />
+                <Setter Property="Background" Value="#FFF1F3F9" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Padding" Value="12,8" />
+                <Setter Property="Cursor" Value="Hand" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="10"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#FFE6ECFA" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.45" />
+                                    <Setter TargetName="border" Property="Background" Value="#FFE4E7EC" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="{x:Type Button}" x:Key="PrimaryButtonStyle" BasedOn="{StaticResource {x:Type Button}}">
+                <Setter Property="Background" Value="{StaticResource AccentBrush}" />
+                <Setter Property="Foreground" Value="White" />
+                <Setter Property="BorderBrush" Value="{StaticResource AccentBrushDark}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border"
+                                    CornerRadius="12"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#FF007ED3" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="border" Property="Background" Value="#FF005A99" />
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.65" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="{x:Type TextBox}">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Background" Value="#FFF9FAFB" />
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="10,6" />
+                <Setter Property="Foreground" Value="#FF111926" />
+            </Style>
+
+            <Style TargetType="{x:Type ComboBox}">
+                <Setter Property="FontFamily" Value="Segoe UI" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Background" Value="#FFF9FAFB" />
+                <Setter Property="BorderBrush" Value="{StaticResource InputBorderBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Padding" Value="6,4" />
+            </Style>
+
+            <Style TargetType="{x:Type ProgressBar}">
+                <Setter Property="Height" Value="10" />
+                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                <Setter Property="Background" Value="#FFE4E7EC" />
+            </Style>
+
+            <Style x:Key="GlyphTextStyle" TargetType="{x:Type TextBlock}">
+                <Setter Property="FontFamily" Value="Segoe Fluent Icons" />
+                <Setter Property="FontSize" Value="20" />
+                <Setter Property="Foreground" Value="{StaticResource AccentBrush}" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <Style x:Key="CardStyle" TargetType="{x:Type Border}">
+                <Setter Property="Background" Value="{StaticResource CardBackgroundBrush}" />
+                <Setter Property="CornerRadius" Value="18" />
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Effect">
+                    <Setter.Value>
+                        <DropShadowEffect BlurRadius="18" Opacity="0.15" ShadowDepth="0" />
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
