@@ -1,18 +1,31 @@
+# Build artifacts
 bin/
 obj/
+/Debug/
+/Release/
+
+# IDE settings
 .vs/
+.idea/
+
+# User-specific files
 *.user
+*.rsuser
 *.suo
 *.userosscache
 *.sln.docstates
-*.rsuser
-TestResults/
-*.ncb
+
+# Logs & caches
+*.log
+*.tmp
+*.cache
+*.cachefile
 *.opendb
 *.opensdf
-*.cachefile
+
+# Database files
 *.dbmdl
 *.mdb
-*.tmp
-.idea/
-*.log
+
+# Test runs
+TestResults/
