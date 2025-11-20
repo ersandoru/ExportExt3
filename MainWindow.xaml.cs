@@ -17,6 +17,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
 {
     private readonly DiskService _diskService = new();
     private readonly Ext3ExportService _exportService = new();
+    private readonly WslService _wslService = new();
     private readonly ObservableCollection<DiskDeviceInfo> _disks = new();
     private readonly ObservableCollection<DiskPartitionInfo> _partitions = new();
 
@@ -24,8 +25,11 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     private DiskPartitionInfo? _selectedPartition;
     private string? _destinationFolder;
     private string _statusMessage = "Ready.";
+    private string _wslStatusMessage = "WSL status not checked yet.";
     private bool _isBusy;
+    private bool _isWslBusy;
     private double _progressValue;
+    private WslStatus _wslStatus = new(false, "WSL status not checked yet.");
 
     public MainWindow()
     {
@@ -38,6 +42,7 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
                 "Ext3Export");
             await RefreshDisksAsync();
+            await RefreshWslStatusAsync();
         };
     }
 
@@ -58,6 +63,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 OnPropertyChanged();
                 UpdatePartitions();
                 OnPropertyChanged(nameof(CanExport));
+                OnPropertyChanged(nameof(CanMountWithWsl));
+                OnPropertyChanged(nameof(WslMountCommandHint));
             }
         }
     }
@@ -72,6 +79,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 _selectedPartition = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanExport));
+                OnPropertyChanged(nameof(CanMountWithWsl));
+                OnPropertyChanged(nameof(WslMountCommandHint));
             }
         }
     }
@@ -103,6 +112,19 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    public string WslStatusMessage
+    {
+        get => _wslStatusMessage;
+        set
+        {
+            if (_wslStatusMessage != value)
+            {
+                _wslStatusMessage = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     public bool IsBusy
     {
         get => _isBusy;
@@ -114,6 +136,20 @@ public partial class MainWindow : Window, INotifyPropertyChanged
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(CanExport));
                 OnPropertyChanged(nameof(IsProgressIndeterminate));
+            }
+        }
+    }
+
+    public bool IsWslBusy
+    {
+        get => _isWslBusy;
+        set
+        {
+            if (_isWslBusy != value)
+            {
+                _isWslBusy = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanMountWithWsl));
             }
         }
     }
@@ -135,6 +171,13 @@ public partial class MainWindow : Window, INotifyPropertyChanged
     public bool CanExport => !IsBusy &&
                              SelectedPartition is not null &&
                              !string.IsNullOrWhiteSpace(DestinationFolder);
+
+    public bool CanMountWithWsl => !IsWslBusy && SelectedPartition is not null && _wslStatus.IsInstalled;
+
+    public string WslMountCommandHint =>
+        SelectedPartition is null
+            ? "Select a partition to build a WSL mount command."
+            : $"Planned mount: wsl --mount {SelectedPartition.DevicePath} --partition {SelectedPartition.WslPartitionNumber} --type ext3 --options \"ro\" (mount point {_wslService.GetMountPointHint(SelectedPartition)})";
 
     public bool IsProgressIndeterminate => IsBusy && ProgressValue < 0.1;
 
@@ -185,6 +228,8 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         AvailablePartitions.Clear();
         if (SelectedDisk is null)
         {
+            OnPropertyChanged(nameof(WslMountCommandHint));
+            OnPropertyChanged(nameof(CanMountWithWsl));
             return;
         }
 
@@ -198,6 +243,30 @@ public partial class MainWindow : Window, INotifyPropertyChanged
             0 => null,
             _ => AvailablePartitions.FirstOrDefault(p => p.LooksLikeLinux) ?? AvailablePartitions[0]
         };
+
+        OnPropertyChanged(nameof(WslMountCommandHint));
+        OnPropertyChanged(nameof(CanMountWithWsl));
+    }
+
+    private async Task RefreshWslStatusAsync()
+    {
+        try
+        {
+            IsWslBusy = true;
+            WslStatusMessage = "Checking WSL status...";
+            _wslStatus = await _wslService.GetStatusAsync();
+            WslStatusMessage = _wslStatus.Message;
+        }
+        catch (Exception ex)
+        {
+            _wslStatus = new WslStatus(false, $"Unable to check WSL: {ex.Message}");
+            WslStatusMessage = _wslStatus.Message;
+        }
+        finally
+        {
+            IsWslBusy = false;
+            OnPropertyChanged(nameof(CanMountWithWsl));
+        }
     }
 
     private async void RefreshClicked(object sender, RoutedEventArgs e)
@@ -277,8 +346,105 @@ public partial class MainWindow : Window, INotifyPropertyChanged
         }
     }
 
+    private async void InstallWslClicked(object sender, RoutedEventArgs e)
+    {
+        if (IsWslBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            IsWslBusy = true;
+            WslStatusMessage = "Installing/repairing WSL (this may take a few minutes)...";
+            var installResult = await _wslService.InstallAsync();
+            if (installResult.ExitCode != 0)
+            {
+                WslStatusMessage =
+                    $"WSL install failed (code {installResult.ExitCode}). {CombineOutput(installResult)}";
+                return;
+            }
+
+            var updateResult = await _wslService.UpdateAsync();
+            if (updateResult.ExitCode != 0)
+            {
+                WslStatusMessage =
+                    $"WSL update failed (code {updateResult.ExitCode}). {CombineOutput(updateResult)}";
+                return;
+            }
+
+            WslStatusMessage =
+                "WSL install/update command completed. If this is the first install, reboot before mounting.";
+        }
+        catch (Exception ex)
+        {
+            WslStatusMessage = $"Unable to run WSL installer: {ex.Message}";
+        }
+        finally
+        {
+            IsWslBusy = false;
+            await RefreshWslStatusAsync();
+        }
+    }
+
+    private async void MountWithWslClicked(object sender, RoutedEventArgs e)
+    {
+        if (!CanMountWithWsl || SelectedPartition is null)
+        {
+            return;
+        }
+
+        try
+        {
+            IsWslBusy = true;
+            WslStatusMessage = "Mounting in WSL as read-only ext3...";
+            var result = await _wslService.MountPartitionAsync(SelectedPartition, readOnly: true);
+            if (result.ExitCode == 0)
+            {
+                var mountPoint = _wslService.GetMountPointHint(SelectedPartition);
+                WslStatusMessage =
+                    $"Mounted in WSL at {mountPoint}. Open WSL and browse that path (read-only).";
+            }
+            else
+            {
+                WslStatusMessage = $"Mount failed (code {result.ExitCode}): {CombineOutput(result)}";
+            }
+        }
+        catch (Exception ex)
+        {
+            WslStatusMessage = $"Mount failed: {ex.Message}";
+        }
+        finally
+        {
+            IsWslBusy = false;
+        }
+    }
+
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
     {
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+    }
+
+    private static string CombineOutput(CommandResult result)
+    {
+        var output = string.Empty;
+        if (!string.IsNullOrWhiteSpace(result.StandardOutput))
+        {
+            output = result.StandardOutput.Trim();
+        }
+
+        if (!string.IsNullOrWhiteSpace(result.StandardError))
+        {
+            if (!string.IsNullOrEmpty(output))
+            {
+                output += " ";
+            }
+
+            output += result.StandardError.Trim();
+        }
+
+        return string.IsNullOrWhiteSpace(output)
+            ? "No output from WSL."
+            : output;
     }
 }

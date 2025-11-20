@@ -18,6 +18,8 @@ public sealed class DiskPartitionInfo
 
     public bool LooksLikeLinux { get; init; }
 
+    public int WslPartitionNumber => Index + 1;
+
     public string DisplayName => $"Partition {Index} - {SizeFormatter.FormatBytes(Size)}";
 
     public override string ToString() => $"{DisplayName} ({PartitionType ?? "Unknown"})";
